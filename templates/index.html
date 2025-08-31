@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GPS Tracker</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        // Harita başlat
+        var map = L.map('map').setView([0,0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        var markers = [];
+
+        // GPS verilerini al ve haritaya ekle
+        async function updateLocations() {
+            try {
+                const res = await fetch('/view_locations');
+                const data = await res.json();
+
+                // Önce eski markerları temizle
+                markers.forEach(m => map.removeLayer(m));
+                markers = [];
+
+                data.forEach(point => {
+                    const marker = L.marker([point.lat, point.lon]).addTo(map);
+                    marker.bindPopup(`Lat: ${point.lat}, Lon: ${point.lon}`);
+                    markers.push(marker);
+                });
+
+                // Son koordinata zoom
+                if(data.length > 0){
+                    map.setView([data[data.length-1].lat, data[data.length-1].lon], 15);
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Her 10 saniyede bir güncelle
+        setInterval(updateLocations, 10000);
+        updateLocations();
+    </script>
+</body>
+</html>
