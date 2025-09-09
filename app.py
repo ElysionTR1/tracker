@@ -16,11 +16,11 @@ os.makedirs("photos", exist_ok=True)
 @app.route("/upload_location", methods=["POST"])
 def upload_location():
     data = request.get_json()
-    if not data or "lat" not in data or "lon" not in data:
-        return jsonify({"status": "error", "message": "lat/lon missing"}), 400
+    if not data or "latitude" not in data or "longitude" not in data:
+        return jsonify({"status": "error", "message": "latitude/longitude missing"}), 400
 
-    lat = data["lat"]
-    lon = data["lon"]
+    lat = data["latitude"]
+    lon = data["longitude"]
 
     # Listeye ekle (harita için)
     gps_data.append({"lat": lat, "lon": lon})

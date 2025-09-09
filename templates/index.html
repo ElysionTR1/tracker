@@ -1,62 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GPS Tracker</title>
-    <meta charset="utf-8" />
+    <title>Canlı GPS Harita</title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <style>
         #map { height: 100vh; }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+<div id="map"></div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([0, 0], 2); // Başlangıç koordinatları
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(map);
 
-    <script>
-        // Harita başlat
-        var map = L.map('map').setView([0,0], 2);
+    let markers = [];
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+    async function fetchLocations() {
+        try {
+            const res = await fetch('/view_locations');
+            const data = await res.json();
 
-        var markers = [];
+            // Önce eski markerları temizle
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
 
-        // GPS verilerini al ve haritaya ekle
-        async function updateLocations() {
-            try {
-                const res = await fetch('/view_locations');
-                const data = await res.json();
+            data.forEach(loc => {
+                const marker = L.marker([loc.lat, loc.lon]).addTo(map);
+                markers.push(marker);
+            });
 
-                // Önce eski markerları temizle
-                markers.forEach(m => map.removeLayer(m));
-                markers = [];
-
-                data.forEach(point => {
-                    const marker = L.marker([point.lat, point.lon]).addTo(map);
-                    marker.bindPopup(`Lat: ${point.lat}, Lon: ${point.lon}`);
-                    markers.push(marker);
-                });
-
-                // Son koordinata zoom
-                if(data.length > 0){
-                    map.setView([data[data.length-1].lat, data[data.length-1].lon], 15);
-                }
-
-            } catch (err) {
-                console.error(err);
+            // Haritayı son konuma odakla
+            if(data.length) {
+                const last = data[data.length-1];
+                map.setView([last.lat, last.lon], 16);
             }
+        } catch (err) {
+            console.error(err);
         }
+    }
 
-        // Her 10 saniyede bir güncelle
-        setInterval(updateLocations, 10000);
-        updateLocations();
-    </script>
+    // 5 saniyede bir güncelle
+    setInterval(fetchLocations, 5000);
+    fetchLocations(); // İlk yüklemede de çek
+</script>
 </body>
 </html>
